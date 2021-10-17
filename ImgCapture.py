@@ -37,12 +37,12 @@ class ImgCapture:
 
 	def __getImg(self):
 		imgs = self.browser.find_elements_by_css_selector('div.vbI.XiG img')
-		is_finished = True
+		is_not_change = True
 		for img in imgs:
 			url = img.get_attribute('src')
 			if url in self.url_logs:
 				continue
-			is_finished = False
+			is_not_change = False
 			self.url_logs.append(url)
 			res = requests.get(url)
 			with open(self.dst + "{}.jpg".format(self.cnt), "wb") as f:
@@ -51,7 +51,7 @@ class ImgCapture:
 			if self.cnt >= self.max:
 				return True
 			sleep(1)
-		return is_finished
+		return is_not_change
 
 	def __scroll(self):
 		self.browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
