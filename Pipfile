@@ -9,6 +9,8 @@ requests = "*"
 html5lib = "*"
 selenium = "*"
 webdriver-manager = "*"
+opencv-python = "*"
+opencv-contrib-python = "*"
 
 [dev-packages]
 

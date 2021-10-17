@@ -1,33 +1,41 @@
 from genericpath import exists
 import os, signal
+from traceback import format_exc
 from selenium.webdriver import Chrome
+from selenium.webdriver.chrome import service as cs
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.common.by import By
 from time import sleep
 import requests
 from shutil import rmtree
+from pickle import dump, load
+from sys import argv
 
 class ImgCapture:
 	"""pinterestの画像収集
 	"""
 	def __init__(self, url):
 		options = Options()
-		print(options)
 		options.add_argument('--user-data-dir=' + os.environ['USER_DATA_DIR'])
 		options.add_argument('--profile-directory' + os.environ['PROFILE_DIRECTORY'])
+		# options.add_argument('--headless')
+		# options.add_argument('--start-maximized')
+		# options.add_argument('--window-size=1920,1080')
 		options.add_experimental_option('excludeSwitches', ['enable-logging'])
 		options.use_chromium = True
-		self.browser = Chrome(ChromeDriverManager().install(), options=options)
-		self.browser.get(url)
+		chrome_service = cs.Service(executable_path=ChromeDriverManager().install())
+		self.browser = Chrome(service=chrome_service, options=options)
+		self.browser.implicitly_wait(15)
 		self.url_logs = []
+		self.browser.get(url)
 		self.cnt = 0
 
 	def searchKeyword(self, keyword):
-		search = self.browser.find_element_by_tag_name('input')
+		search = self.browser.find_element(by=By.TAG_NAME, value='input')
 		search.send_keys(keyword)
 		search.send_keys(Keys.ENTER)
-		sleep(5)
 
 	def saveImg(self, max, dst):
 		self.max = max
@@ -36,7 +44,8 @@ class ImgCapture:
 			self.__scroll()
 
 	def __getImg(self):
-		imgs = self.browser.find_elements_by_css_selector('div.vbI.XiG img')
+		sleep(10)
+		imgs = self.browser.find_elements(by=By.CSS_SELECTOR, value='div.vbI.XiG img')
 		is_not_change = True
 		for img in imgs:
 			url = img.get_attribute('src')
@@ -55,24 +64,27 @@ class ImgCapture:
 
 	def __scroll(self):
 		self.browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-		sleep(5)
 	
 	def __del__(self):
 		self.browser.quit()
 
 def main():
-	dst = 'imgs/'
-	if exists(dst):
-		rmtree(dst)
-	os.makedirs(dst)
+	global capture
+	dst = argv[1]
+	os.makedirs(dst, exist_ok=True)
 	capture = ImgCapture('https://www.pinterest.jp/')
 
-	capture.searchKeyword('search_keyword')
-	capture.saveImg(100, dst)
-	del capture
+	capture.searchKeyword(argv[2])
+	capture.saveImg(5000, dst)
 
 if __name__ == '__main__':
+	if len(argv) < 3:
+		print('command line param error')
+		exit()
 	try:
 		main()
+		print("SUCCESS!!!")
 	except Exception as e:
 		print("error:" + e.args[0])
+		print(format_exc())
+	del capture
